@@ -147,7 +147,7 @@
   <main>
     <section>
       <h2>Como posso contribuir</h2>
-      <div class="grade">
+     <div class="grade" id="portfolio-blocos">
         <article>
           <h3>Gestão de projetos sociais</h3>
           <p>Planejamento, elaboração de projetos, captação de recursos,
@@ -231,10 +231,9 @@
   const SUPABASE_URL = 'https://fgvzvsymkansyvwzcmrv.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_TrZafVaZPRroeq9hP8lMKw_uSgREXPn';
 
-  async function carregarPortfolio() {
-  try {
+  async function consultarTabela(tabela, campos) {
     const resposta = await fetch(
-      `${SUPABASE_URL}/rest/v1/perfil?select=nome,titulo,apresentacao,email,linkedin,localidade,chamada_final`,
+      `${SUPABASE_URL}/rest/v1/${tabela}?select=${campos}`,
       {
         headers: {
           apikey: SUPABASE_KEY,
@@ -244,22 +243,61 @@
     );
 
     if (!resposta.ok) {
-      throw new Error('Não foi possível carregar o perfil.');
+      throw new Error(`Erro ao consultar ${tabela}: ${resposta.status}`);
     }
 
-    const dados = await resposta.json();
-    const perfil = dados[0];
-
-    if (!perfil) return;
-
-    document.getElementById('perfil-nome').textContent = perfil.nome;
-    document.getElementById('perfil-apresentacao').textContent = perfil.apresentacao;
-
-    console.log('Perfil aplicado ao site:', perfil.nome);
-  } catch (erro) {
-    console.error('Erro ao conectar ao Supabase:', erro);
+    return await resposta.json();
   }
-}
+
+  async function carregarPortfolio() {
+    try {
+      const perfis = await consultarTabela(
+        'perfil',
+        'nome,titulo,apresentacao,email,linkedin,localidade,chamada_final'
+      );
+
+      const perfil = perfis[0];
+
+      if (perfil) {
+        const nome = document.getElementById('perfil-nome');
+        const apresentacao = document.getElementById('perfil-apresentacao');
+
+        if (nome) nome.textContent = perfil.nome;
+        if (apresentacao) apresentacao.textContent = perfil.apresentacao;
+      }
+
+      const blocos = await consultarTabela(
+        'blocos',
+        'titulo,descricao,ordem,ativo'
+      );
+
+      const grade = document.getElementById('portfolio-blocos');
+
+      if (grade && blocos.length) {
+        grade.replaceChildren();
+
+        blocos
+          .filter(bloco => bloco.ativo)
+          .sort((a, b) => a.ordem - b.ordem)
+          .forEach(bloco => {
+            const artigo = document.createElement('article');
+            const titulo = document.createElement('h3');
+            const descricao = document.createElement('p');
+
+            titulo.textContent = bloco.titulo;
+            descricao.textContent = bloco.descricao;
+
+            artigo.append(titulo, descricao);
+            grade.appendChild(artigo);
+          });
+      }
+
+      console.log('Perfil e blocos carregados do Supabase.');
+    } catch (erro) {
+      console.error('Erro ao carregar o portfólio:', erro);
+    }
+  }
+
   carregarPortfolio();
 </script>
 </html>

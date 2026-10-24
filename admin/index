@@ -1,0 +1,62 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administração | Rosa Social</title>
+</head>
+<body>
+  <h1>Área administrativa</h1>
+  <p id="status">Verificando acesso...</p>
+  <p id="usuario"></p>
+  <button id="sair" hidden>Sair</button>
+  <p><a href="../">Voltar ao portfólio público</a></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+     const SUPABASE_URL = 'https://fgvzvsymkansyvwzcmrv.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_TrZafVaZPRroeq9hP8lMKw_uSgREXPn';
+
+
+    const cliente = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+    async function verificarAcesso() {
+      const { data, error } = await cliente.auth.getSession();
+
+      if (error || !data.session) {
+        window.location.replace("./login.html");
+        return;
+      }
+
+      document.getElementById("status").textContent =
+        "Login realizado com sucesso.";
+      document.getElementById("usuario").textContent =
+        "Usuário: " + data.session.user.email;
+      document.getElementById("sair").hidden = false;
+    }
+
+    document.getElementById("sair").addEventListener("click", async () => {
+      const botao = document.getElementById("sair");
+      botao.disabled = true;
+
+      const { error } = await cliente.auth.signOut();
+
+      if (error) {
+        document.getElementById("status").textContent =
+          "Não foi possível sair. Tente novamente.";
+        botao.disabled = false;
+        return;
+      }
+
+      window.location.replace("./login.html");
+    });
+
+    verificarAcesso();
+  </script>
+</body>
+</html>
+```
